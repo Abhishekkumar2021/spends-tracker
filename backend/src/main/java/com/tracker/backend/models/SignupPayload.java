@@ -22,4 +22,8 @@ public class SignupPayload {
     private String email;
 
     private Boolean isAdmin;
+
+    public SignupPayload() {
+        this.isAdmin = Boolean.FALSE;
+    }
 }

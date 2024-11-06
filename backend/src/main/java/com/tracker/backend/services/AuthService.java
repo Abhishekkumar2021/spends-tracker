@@ -41,7 +41,7 @@ public class AuthService {
                 })
                 .flatMap(exists -> {
                     if (exists) {
-                        throw new ServiceException("Email already exists", HttpStatus.CONFLICT);
+                        return Mono.error(new ServiceException("Email already exists", HttpStatus.CONFLICT));
                     }
                     return userRepository.save(user);
                 })
@@ -60,15 +60,16 @@ public class AuthService {
         // Generate JWT token upon successful login
         final String username = loginPayload.getUsername();
         return userRepository.findByUsername(username)
-                .map(user -> {
-                    if(!passwordEncoder.matches(loginPayload.getPassword(), user.getPassword())){
-                        throw new ServiceException("Invalid credentials", HttpStatus.UNAUTHORIZED);
+                .switchIfEmpty(Mono.error(new ServiceException("Invalid username", HttpStatus.UNAUTHORIZED)))
+                .flatMap(user -> {
+                    if (!passwordEncoder.matches(loginPayload.getPassword(), user.getPassword())) {
+                        return Mono.error(new ServiceException("Invalid password", HttpStatus.UNAUTHORIZED));
                     }
                     CustomResponse response = new CustomResponse();
                     response.setMessage("User logged in successfully");
                     response.addData("token", JWTUtil.generateToken(username, user.getRole()));
                     response.setStatus(HttpStatus.OK);
-                    return response;
+                    return Mono.just(response);
                 })
                 .doOnSuccess(success -> loggingService.info("User logged in successfully"))
                 .doOnError(error -> loggingService.error(error.getMessage()));

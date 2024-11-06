@@ -1,9 +1,7 @@
 package com.tracker.backend.utils;
 
 import java.security.Key;
-import java.util.Base64;
 import java.util.Date;
-
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -63,7 +61,7 @@ public class JWTUtil {
     }
 
     private Key getSignInKey() {
-        byte[] keyBytes = Base64.getEncoder().encode(secret.getBytes());
+        byte[] keyBytes = secret.getBytes();
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
