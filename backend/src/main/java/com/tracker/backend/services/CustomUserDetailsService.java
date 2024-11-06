@@ -25,7 +25,7 @@ public class CustomUserDetailsService implements ReactiveUserDetailsService {
                 .map(user -> User
                         .withUsername(user.getUsername())
                         .password(user.getPassword())
-                        .authorities(GrantedAuthority.class.cast(List.of(user.getRoles())))
+                        .authorities(List.of((GrantedAuthority) () -> "ROLE_" + user.getRole().getName()))
                         .accountExpired(false)
                         .accountLocked(false)
                         .credentialsExpired(false)

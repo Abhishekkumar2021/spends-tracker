@@ -15,7 +15,7 @@ public class LoggingService {
         log.warn(message);
     }
 
-    public void error(String message) {
-        log.error(message);
+    public void error(String message, Throwable error) {
+        log.error(message, error);
     }
 }

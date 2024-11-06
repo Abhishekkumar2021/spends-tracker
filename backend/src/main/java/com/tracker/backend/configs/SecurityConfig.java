@@ -23,6 +23,8 @@ public class SecurityConfig {
         return http
                 .authorizeExchange(exchanges -> exchanges
                         .pathMatchers("/api/auth/**").permitAll()
+                        .pathMatchers("/api/admin/**").hasRole("ADMIN")
+                        .pathMatchers("/api/user/**").hasRole("USER")
                         .pathMatchers("/api/**").authenticated()
                         .anyExchange().permitAll())
                 .httpBasic(httpBasicSpec -> httpBasicSpec.disable())

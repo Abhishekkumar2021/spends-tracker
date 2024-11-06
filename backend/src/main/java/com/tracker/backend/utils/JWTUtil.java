@@ -2,9 +2,12 @@ package com.tracker.backend.utils;
 
 import java.security.Key;
 import java.util.Date;
+
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import com.tracker.backend.models.Role;
 import com.tracker.backend.repositories.UserRepository;
 
 import io.jsonwebtoken.Claims;
@@ -29,10 +32,11 @@ public class JWTUtil {
     private long expiration;
     
     // Methods
-    public String generateToken(String username) {
+    public String generateToken(String username, Role role) {
         return Jwts
                 .builder()
                 .setSubject(username)
+                .claim("role", role)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getSignInKey(), SignatureAlgorithm.HS256)
@@ -47,6 +51,10 @@ public class JWTUtil {
 
     public String extractUsername(String token) {
         return (String) getClaims(token).getSubject();
+    }
+
+    public Role extractRole(String token) {
+        return (Role) getClaims(token).get("role");
     }
 
     private Boolean isTokenExpired(String token) {
