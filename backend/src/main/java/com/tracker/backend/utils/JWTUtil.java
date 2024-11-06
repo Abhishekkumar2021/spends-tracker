@@ -1,6 +1,7 @@
 package com.tracker.backend.utils;
 
 import java.security.Key;
+import java.util.Base64;
 import java.util.Date;
 
 
@@ -13,7 +14,6 @@ import com.tracker.backend.repositories.UserRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -63,7 +63,7 @@ public class JWTUtil {
     }
 
     private Key getSignInKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(secret);
+        byte[] keyBytes = Base64.getEncoder().encode(secret.getBytes());
         return Keys.hmacShaKeyFor(keyBytes);
     }
 

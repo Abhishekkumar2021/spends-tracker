@@ -4,6 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.tracker.backend.exceptions.ServiceException;
 import com.tracker.backend.models.CustomResponse;
 import com.tracker.backend.models.LoginPayload;
 import com.tracker.backend.models.Role;
@@ -23,14 +24,27 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JWTUtil JWTUtil;
 
-    public Mono<CustomResponse> signup(SignupPayload signupPayload) {
+    public Mono<CustomResponse> signup(SignupPayload signupPayload) throws ServiceException {
         User user = new User();
         user.setUsername(signupPayload.getUsername());
         user.setEmail(signupPayload.getEmail());
         user.setPassword(passwordEncoder.encode(signupPayload.getPassword()));
         user.setRole(signupPayload.getIsAdmin() == Boolean.TRUE ? Role.ADMIN : Role.USER);
         user.setEmailVerified(false);
-        return userRepository.save(user)
+        // Check if already exists then return error
+        return userRepository.existsByUsername(user.getUsername())
+                .flatMap(exists -> {
+                    if (exists) {
+                        throw new ServiceException("Username already exists", HttpStatus.CONFLICT);
+                    }
+                    return userRepository.existsByEmail(user.getEmail());
+                })
+                .flatMap(exists -> {
+                    if (exists) {
+                        throw new ServiceException("Email already exists", HttpStatus.CONFLICT);
+                    }
+                    return userRepository.save(user);
+                })
                 .map(u -> {
                     CustomResponse response = new CustomResponse();
                     response.setMessage("User signed up successfully");
@@ -39,15 +53,17 @@ public class AuthService {
                     return response;
                 })
                 .doOnSuccess(success -> loggingService.info("User signed up successfully"))
-                .doOnError(error -> loggingService.error("Error signing up user", error));
+                .doOnError(error -> loggingService.error(error.getMessage()));
     }
 
     public Mono<CustomResponse> login(LoginPayload loginPayload) {
         // Generate JWT token upon successful login
         final String username = loginPayload.getUsername();
         return userRepository.findByUsername(username)
-                .filter(user -> passwordEncoder.matches(loginPayload.getPassword(), user.getPassword()))
                 .map(user -> {
+                    if(!passwordEncoder.matches(loginPayload.getPassword(), user.getPassword())){
+                        throw new ServiceException("Invalid credentials", HttpStatus.UNAUTHORIZED);
+                    }
                     CustomResponse response = new CustomResponse();
                     response.setMessage("User logged in successfully");
                     response.addData("token", JWTUtil.generateToken(username, user.getRole()));
@@ -55,6 +71,6 @@ public class AuthService {
                     return response;
                 })
                 .doOnSuccess(success -> loggingService.info("User logged in successfully"))
-                .doOnError(error -> loggingService.error("Error logging in user", error));
+                .doOnError(error -> loggingService.error(error.getMessage()));
     }
 }

@@ -18,4 +18,8 @@ public class LoggingService {
     public void error(String message, Throwable error) {
         log.error(message, error);
     }
+
+    public void error(String message) {
+        log.error(message);
+    }
 }
