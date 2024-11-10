@@ -21,8 +21,6 @@ public class CategoryService {
     private static final String CATEGORY_NOT_FOUND = "Category with ID %s not found";
     private static final String CATEGORY_EXISTS = "Category with name %s already exists";
 
-
-
     // Create a new category
     public Mono<CustomResponse> createCategory(CategoryPayload categoryPayload) throws ServiceException {
         Category category = new Category();

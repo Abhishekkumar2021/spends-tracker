@@ -1,6 +1,5 @@
 package com.tracker.backend.controllers;
 
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -40,33 +39,32 @@ public class AuthController {
     }
 
     @ResponseStatus(HttpStatus.OK)
-    @GetMapping("/refresh")
-    public Mono<CustomResponse> refresh(@RequestParam String token) {
-        return authService.refresh(token);
+    @PostMapping("/refresh")
+    public Mono<CustomResponse> refresh(@RequestParam String refreshToken) {
+        return authService.refresh(refreshToken);
     }
 
     @ResponseStatus(HttpStatus.OK)
-    @GetMapping("/forgot-password")
+    @PostMapping("/forgot-password")
     public Mono<CustomResponse> forgotPassword(@RequestParam String email) {
         return authService.forgotPassword(email);
     }
 
     @ResponseStatus(HttpStatus.OK)
     @PostMapping("/reset-password")
-    public Mono<CustomResponse> resetPassword(@RequestBody ResetPasswordPayload resetPasswordPayload) {
+    public Mono<CustomResponse> resetPassword(@RequestBody @Valid ResetPasswordPayload resetPasswordPayload) {
         return authService.resetPassword(resetPasswordPayload.getToken(), resetPasswordPayload.getPassword());
     }
 
     @ResponseStatus(HttpStatus.OK)
-    @GetMapping("/send-verification-email")
+    @PostMapping("/send-verification-email")
     public Mono<CustomResponse> sendVerificationEmail(@RequestParam String email) {
         return authService.sendVerificationOTP(email);
     }
 
     @ResponseStatus(HttpStatus.OK)
-    @GetMapping("/verify-email")
+    @PostMapping("/verify-email")
     public Mono<CustomResponse> verifyEmail(@RequestBody VerifyEmailPayload verifyEmailPayload) {
         return authService.verifyEmailOTP(verifyEmailPayload.getEmail(), verifyEmailPayload.getOtp());
     }
-
 }

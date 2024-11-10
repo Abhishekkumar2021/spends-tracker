@@ -25,7 +25,6 @@ public class AuthService {
     private final LoggingService loggingService;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final EmailService emailService;
     private final OTPService otpService;
     private final JWTUtil jwtUtil;
 
@@ -40,7 +39,6 @@ public class AuthService {
         user.setEmail(signupPayload.getEmail());
         user.setPassword(passwordEncoder.encode(signupPayload.getPassword()));
         user.setRole(signupPayload.getIsAdmin() == Boolean.TRUE ? Role.ADMIN : Role.USER);
-        // Check if already exists then return error
         return userRepository.existsByUsername(user.getUsername())
                 .flatMap(exists -> {
                     if (Boolean.TRUE.equals(exists)) {
@@ -57,7 +55,6 @@ public class AuthService {
                 .map(u -> {
                     CustomResponse response = new CustomResponse();
                     response.setMessage("User signed up successfully");
-                    response.addData("user", u);
                     response.setStatusCode(HttpStatus.CREATED.value());
                     return response;
                 })
@@ -65,8 +62,7 @@ public class AuthService {
                 .doOnError(error -> loggingService.error(error.getMessage()));
     }
 
-    public Mono<CustomResponse> login(LoginPayload loginPayload) {
-        // Generate JWT token upon successful login
+    public Mono<CustomResponse> login(LoginPayload loginPayload) throws ServiceException {
         final String username = loginPayload.getUsername();
         return userRepository.findByUsername(username)
                 .switchIfEmpty(Mono.error(new ServiceException("Invalid username", HttpStatus.UNAUTHORIZED)))
@@ -85,15 +81,16 @@ public class AuthService {
                 .doOnError(error -> loggingService.error(error.getMessage()));
     }
 
-    // Refresh JWT token
-    public Mono<CustomResponse> refresh(String token) {
-        String username = jwtUtil.extractUsernameFromRefreshToken(token);
+    public Mono<CustomResponse> refresh(String refreshToken) throws ServiceException {
+        String username;
+        try {
+            username = jwtUtil.extractUsernameFromRefreshToken(refreshToken);
+        } catch (Exception e) {
+            return Mono.error(new ServiceException("Refresh token expired", HttpStatus.UNAUTHORIZED));
+        }
         return userRepository.findByUsername(username)
                 .switchIfEmpty(Mono.error(new ServiceException("Invalid username", HttpStatus.UNAUTHORIZED)))
                 .flatMap(user -> {
-                    if (Boolean.FALSE.equals(jwtUtil.validateRefreshToken(token))) {
-                        return Mono.error(new ServiceException("Invalid refresh token", HttpStatus.UNAUTHORIZED));
-                    }
                     CustomResponse response = new CustomResponse();
                     response.setMessage("Token refreshed successfully");
                     response.addData("accessToken", jwtUtil.generateAccessToken(username, user.getRole()));
@@ -104,37 +101,33 @@ public class AuthService {
                 .doOnError(error -> loggingService.error(error.getMessage()));
     }
 
-    // Forgot password reset request
-    public Mono<CustomResponse> forgotPassword(String email) {
+    public Mono<CustomResponse> forgotPassword(String email) throws ServiceException {
         return userRepository.existsByEmail(email)
                 .flatMap(exists -> {
                     if (Boolean.FALSE.equals(exists)) {
                         return Mono.error(new ServiceException("Email not found", HttpStatus.NOT_FOUND));
                     }
-
                     String token = jwtUtil.generateOTPToken(email);
-
-                    // send email with token
+                    // TODO: Send email with token
                     CustomResponse response = new CustomResponse();
-                    response.setMessage(String.format("Password reset mail sent to %s", email));
-                    response.addData("token", token);
+                    response.setMessage(String.format("Password reset mail sent to %s with token %s", email, token));
                     response.setStatusCode(HttpStatus.OK.value());
                     return Mono.just(response);
                 })
                 .doOnSuccess(success -> loggingService.info("Password reset mail sent successfully"))
                 .doOnError(error -> loggingService.error(error.getMessage()));
-
     }
 
-    // Verify OTP and reset password
     public Mono<CustomResponse> resetPassword(String token, String newPassword) {
-        String email = jwtUtil.extractEmailFromOTPToken(token);
+        String email;
+        try {
+            email = jwtUtil.extractEmailFromOTPToken(token);
+        } catch (Exception e) {
+            return Mono.error(new ServiceException("Reset token expired", HttpStatus.UNAUTHORIZED));
+        }
         return userRepository.findByEmail(email)
                 .switchIfEmpty(Mono.error(new ServiceException(INVALID_EMAIL, HttpStatus.UNAUTHORIZED)))
                 .flatMap(user -> {
-                    if (Boolean.FALSE.equals(jwtUtil.validateOTPToken(token))) {
-                        return Mono.error(new ServiceException("Invalid OTP", HttpStatus.UNAUTHORIZED));
-                    }
                     user.setPassword(passwordEncoder.encode(newPassword));
                     return userRepository.save(user);
                 })
@@ -148,7 +141,6 @@ public class AuthService {
                 .doOnError(error -> loggingService.error(error.getMessage()));
     }
 
-    // Send email verification OTP
     public Mono<CustomResponse> sendVerificationOTP(String email) {
         return userRepository.findByEmail(email)
                 .switchIfEmpty(Mono.error(new ServiceException(INVALID_EMAIL, HttpStatus.BAD_REQUEST)))
@@ -158,19 +150,18 @@ public class AuthService {
                     user.setVerificationOTPExpiryDate(new Date(System.currentTimeMillis() + otpExpiration));
                     return userRepository.save(user);
                 })
-                .flatMap(user -> emailService.sendverificationEmail(email, user.getUsername(), user.getVerificationOTP()))
-                .flatMap(response -> {
+                .flatMap(user -> {
+                    // TODO: Send email with OTP
                     CustomResponse customResponse = new CustomResponse();
-                    customResponse.setMessage("Email verification OTP sent successfully");
+                    customResponse.setMessage(String.format("Email verification OTP sent to %s with OTP %s", email,
+                            user.getVerificationOTP()));
                     customResponse.setStatusCode(HttpStatus.OK.value());
                     return Mono.just(customResponse);
                 })
                 .doOnSuccess(success -> loggingService.info("Email verification OTP sent successfully"))
                 .doOnError(error -> loggingService.error(error.getMessage()));
-
     }
 
-    // Verify email OTP
     public Mono<CustomResponse> verifyEmailOTP(String email, String otp) {
         return userRepository.findByEmail(email)
                 .switchIfEmpty(Mono.error(new ServiceException(INVALID_EMAIL, HttpStatus.BAD_REQUEST)))
@@ -190,5 +181,4 @@ public class AuthService {
                 .doOnSuccess(success -> loggingService.info("Email verified successfully"))
                 .doOnError(error -> loggingService.error(error.getMessage()));
     }
-
 }

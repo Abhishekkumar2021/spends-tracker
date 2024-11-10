@@ -32,7 +32,7 @@ public class JWTUtil {
     @Value("${jwt.secret.otp}")
     private String otpSecret;
 
-    @Value("${jwt.expiration.secret}")
+    @Value("${jwt.expiration.access}")
     private long accessTokenExpiration;
 
     @Value("${jwt.expiration.refresh}")
@@ -77,14 +77,6 @@ public class JWTUtil {
         String usernameFromToken = extractUsernameFromAccessToken(token);
         boolean isTokenExpired = isTokenExpired(token, accessTokenSecret);
         return usernameFromToken.equals(username) && !isTokenExpired;
-    }
-
-    public Boolean validateRefreshToken(String token) {
-        return !isTokenExpired(token, refreshTokenSecret);
-    }
-
-    public Boolean validateOTPToken(String token) {
-        return !isTokenExpired(token, otpSecret);
     }
 
     public String extractUsernameFromAccessToken(String token) {

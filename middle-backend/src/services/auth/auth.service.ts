@@ -6,34 +6,75 @@ import { requestHandler } from 'src/utils/request.handler';
 
 @Injectable()
 export class AuthService {
+  private readonly authApiUrl: string;
   constructor(
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
-  ) {}
+  ) {
+    this.authApiUrl = this.configService.get('SERVICE_BASE_URL') + '/api/auth';
+  }
 
-  async login(username: string, password: string): Promise<ApiResponse> {
-    const baseUrl = this.configService.get('SERVICE_BASE_URL');
-
+  login(username: string, password: string): Promise<ApiResponse> {
     return requestHandler(
-      this.httpService.post(`${baseUrl}/auth/login`, {
+      this.httpService.post(`${this.authApiUrl}/login`, {
         username,
         password,
       }),
     );
   }
 
-  async signup(
+  signup(
     username: string,
     email: string,
     password: string,
   ): Promise<ApiResponse> {
-    const baseUrl = this.configService.get('SERVICE_BASE_URL');
-
     return requestHandler(
-      this.httpService.post(`${baseUrl}/auth/signup`, {
+      this.httpService.post(`${this.authApiUrl}/signup`, {
         username,
         email,
         password,
+      }),
+    );
+  }
+
+  refresh(refreshToken: string): Promise<ApiResponse> {
+    return requestHandler(
+      this.httpService.post(
+        `${this.authApiUrl}/refresh?refreshToken=${refreshToken}`,
+      ),
+    );
+  }
+
+  forgotPassword(email: string): Promise<ApiResponse> {
+    return requestHandler(
+      this.httpService.post(
+        `${this.authApiUrl}/forgot-password?email=${email}`,
+      ),
+    );
+  }
+
+  resetPassword(token: string, password: string): Promise<ApiResponse> {
+    return requestHandler(
+      this.httpService.post(`${this.authApiUrl}/reset-password`, {
+        token,
+        password,
+      }),
+    );
+  }
+
+  sendVerificationEmail(email: string): Promise<ApiResponse> {
+    return requestHandler(
+      this.httpService.post(
+        `${this.authApiUrl}/send-verification-email?email=${email}`,
+      ),
+    );
+  }
+
+  verifyEmail(otp: string, email: string): Promise<ApiResponse> {
+    return requestHandler(
+      this.httpService.post(`${this.authApiUrl}/verify-email`, {
+        otp,
+        email,
       }),
     );
   }

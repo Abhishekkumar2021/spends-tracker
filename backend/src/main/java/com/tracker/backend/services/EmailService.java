@@ -31,7 +31,7 @@ public class EmailService {
         // Send email
         try {
             sendEmail(email, "Email verification: One Time Password!", htmlContent);
-            return Mono.just("Email sent successfully");
+            return Mono.just("Email sent successfully with OTP + " + otp);
         } catch (MessagingException e) {
             return Mono.error(new ServiceException("Error sending email", HttpStatus.INTERNAL_SERVER_ERROR));
         }

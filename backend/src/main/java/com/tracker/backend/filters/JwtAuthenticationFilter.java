@@ -25,21 +25,27 @@ public class JwtAuthenticationFilter implements WebFilter {
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
         String token = extractToken(exchange);
-        String username = jwtUtil.extractUsernameFromAccessToken(token);
-        if (token != null && username != null) {
-            return userDetailsService.findByUsername(username)
-                    .flatMap(userDetails -> {
-                        if (Boolean.TRUE.equals(jwtUtil.validateAccessToken(token, userDetails.getUsername()))) {
-                            UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                                    userDetails, null, userDetails.getAuthorities());
-                            SecurityContext securityContext = new SecurityContextImpl(auth);
-                            return chain.filter(exchange)
-                                    .contextWrite(ReactiveSecurityContextHolder.withSecurityContext(Mono.just(securityContext)));
-                        }
-                        return chain.filter(exchange);
-                    });
+        if (token == null) {
+            return chain.filter(exchange);
         }
-        return chain.filter(exchange);
+        String username;
+        try {
+            username = jwtUtil.extractUsernameFromAccessToken(token);
+        } catch (Exception e) {
+            return chain.filter(exchange);
+        }
+        return userDetailsService.findByUsername(username)
+                .flatMap(userDetails -> {
+                    if (Boolean.TRUE.equals(jwtUtil.validateAccessToken(token, userDetails.getUsername()))) {
+                        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                                userDetails, null, userDetails.getAuthorities());
+                        SecurityContext securityContext = new SecurityContextImpl(auth);
+                        return chain.filter(exchange)
+                                .contextWrite(
+                                        ReactiveSecurityContextHolder.withSecurityContext(Mono.just(securityContext)));
+                    }
+                    return chain.filter(exchange);
+                });
     }
 
     private String extractToken(ServerWebExchange exchange) {

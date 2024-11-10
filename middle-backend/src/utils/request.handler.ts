@@ -18,11 +18,10 @@ export async function requestHandler(
         errorResponse.message,
         errorResponse.statusCode,
       );
-    } else {
-      throw new GlobalException(
-        'Something went wrong',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
     }
+    throw new GlobalException(
+      'Something went wrong',
+      HttpStatus.INTERNAL_SERVER_ERROR,
+    );
   }
 }

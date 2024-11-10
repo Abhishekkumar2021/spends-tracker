@@ -4,11 +4,12 @@ import { CookieMiddleware } from './middlewares/cookie/cookie.middleware';
 import { AuthController } from './controllers/auth/auth.controller';
 import { AuthService } from './services/auth/auth.service';
 import { HttpModule } from '@nestjs/axios';
+import { LoggingService } from './services/logging/logging.service';
 
 @Module({
   imports: [ConfigModule.forRoot(), HttpModule],
   controllers: [AuthController],
-  providers: [AuthService],
+  providers: [AuthService, LoggingService],
 })
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {
