@@ -72,7 +72,7 @@ Spends Tracker is a web application designed to help users track their spending 
 5. Build and run the middle backend:
     ```sh
     cd ../middle-backend
-    npm run start:dev
+    npm start
     ```
 
 6. Build and run the frontend:
