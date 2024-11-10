@@ -25,10 +25,11 @@ public class JwtAuthenticationFilter implements WebFilter {
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
         String token = extractToken(exchange);
-        if (token != null && jwtUtil.extractUsername(token) != null) {
-            return userDetailsService.findByUsername(jwtUtil.extractUsername(token))
+        String username = jwtUtil.extractUsernameFromAccessToken(token);
+        if (token != null && username != null) {
+            return userDetailsService.findByUsername(username)
                     .flatMap(userDetails -> {
-                        if (jwtUtil.validateToken(token, userDetails.getUsername())) {
+                        if (Boolean.TRUE.equals(jwtUtil.validateAccessToken(token, userDetails.getUsername()))) {
                             UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
                                     userDetails, null, userDetails.getAuthorities());
                             SecurityContext securityContext = new SecurityContextImpl(auth);

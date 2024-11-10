@@ -16,17 +16,17 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(WebExchangeBindException.class)
     public ResponseEntity<CustomErrorResponse> handleValidationExceptions(WebExchangeBindException ex) {
         CustomErrorResponse error = new CustomErrorResponse();
-        String message = "";
+        StringBuilder message = new StringBuilder();
         int n = ex.getBindingResult().getFieldErrors().size();
         for(int i = 0; i < n; i++) {
             FieldError fieldError = ex.getBindingResult().getFieldErrors().get(i);
-            message += fieldError.getField() + ": " + fieldError.getDefaultMessage();
+            message.append(fieldError.getField() + ": " + fieldError.getDefaultMessage());
             if(i != n - 1) {
-                message += ", ";
+                message.append(", ");
             }
         }
-        error.setMessage(message);
-        error.setStatus(HttpStatus.BAD_REQUEST);
+        error.setMessage(message.toString());
+        error.setStatusCode(HttpStatus.BAD_REQUEST.value());
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 
@@ -34,7 +34,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<CustomErrorResponse> handleValidationExceptions(ServiceException ex) {
         CustomErrorResponse error = new CustomErrorResponse();
         error.setMessage(ex.getMessage());
-        error.setStatus(ex.getStatus());
+        error.setStatusCode(ex.getStatus().value());
         return new ResponseEntity<>(error, ex.getStatus());
     }
 
@@ -42,7 +42,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<CustomErrorResponse> handleException(Exception ex) {
         CustomErrorResponse error = new CustomErrorResponse();
         error.setMessage(ex.getMessage());
-        error.setStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+        error.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
         return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

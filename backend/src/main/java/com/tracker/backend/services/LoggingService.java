@@ -22,4 +22,8 @@ public class LoggingService {
     public void error(String message) {
         log.error(message);
     }
+
+    public void debug(String message) {
+        log.debug(message);
+    }
 }

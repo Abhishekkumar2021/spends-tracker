@@ -17,6 +17,11 @@ import reactor.core.publisher.Mono;
 public class CategoryService {
     private final CategoryRepository categoryRepository;
     private final LoggingService loggingService;
+    private static  final String CATEGORY = "Category";
+    private static final String CATEGORY_NOT_FOUND = "Category with ID %s not found";
+    private static final String CATEGORY_EXISTS = "Category with name %s already exists";
+
+
 
     // Create a new category
     public Mono<CustomResponse> createCategory(CategoryPayload categoryPayload) throws ServiceException {
@@ -27,9 +32,9 @@ public class CategoryService {
 
         return categoryRepository.existsByName(category.getName())
                 .flatMap(exists -> {
-                    if (exists) {
+                    if (Boolean.TRUE.equals(exists)) {
                         return Mono.error(
-                                new ServiceException("Category with name " + category.getName() + " already exists",
+                                new ServiceException(String.format(CATEGORY_EXISTS, category.getName()),
                                         HttpStatus.CONFLICT));
                     }
 
@@ -38,8 +43,8 @@ public class CategoryService {
                 .map(savedCategory -> {
                     CustomResponse response = new CustomResponse();
                     response.setMessage("Category created successfully");
-                    response.addData("category", savedCategory);
-                    response.setStatus(HttpStatus.CREATED);
+                    response.addData(CATEGORY, savedCategory);
+                    response.setStatusCode(HttpStatus.CREATED.value());
                     return response;
                 })
                 .doOnSuccess(success -> loggingService.info("Category created successfully"))
@@ -54,7 +59,7 @@ public class CategoryService {
                     CustomResponse response = new CustomResponse();
                     response.addData("categories", categories);
                     response.setMessage("Categories retrieved successfully");
-                    response.setStatus(HttpStatus.OK);
+                    response.setStatusCode(HttpStatus.OK.value());
                     return response;
                 })
                 .doOnSuccess(success -> loggingService.info("Categories retrieved successfully"))
@@ -65,12 +70,12 @@ public class CategoryService {
     public Mono<CustomResponse> getCategoryById(String id) throws ServiceException {
         return categoryRepository.findById(id)
                 .switchIfEmpty(
-                        Mono.error(new ServiceException("Category with ID " + id + " not found", HttpStatus.NOT_FOUND)))
+                        Mono.error(new ServiceException(String.format(CATEGORY_NOT_FOUND, id), HttpStatus.NOT_FOUND)))
                 .flatMap(category -> {
                     CustomResponse response = new CustomResponse();
-                    response.addData("category", category);
+                    response.addData(CATEGORY, category);
                     response.setMessage("Category retrieved successfully");
-                    response.setStatus(HttpStatus.OK);
+                    response.setStatusCode(HttpStatus.OK.value());
                     return Mono.just(response);
                 })
                 .doOnSuccess(success -> loggingService.info("Category retrieved successfully"))
@@ -81,7 +86,7 @@ public class CategoryService {
     public Mono<CustomResponse> updateCategory(String id, CategoryPayload categoryPayload) throws ServiceException {
         return categoryRepository.findById(id)
                 .switchIfEmpty(
-                        Mono.error(new ServiceException("Category with ID " + id + " not found", HttpStatus.NOT_FOUND)))
+                        Mono.error(new ServiceException(String.format(CATEGORY_NOT_FOUND, id), HttpStatus.NOT_FOUND)))
                 .flatMap(category -> {
                     category.setName(categoryPayload.getName());
                     category.setDescription(categoryPayload.getDescription());
@@ -93,7 +98,7 @@ public class CategoryService {
                     CustomResponse response = new CustomResponse();
                     response.addData("category", updatedCategory);
                     response.setMessage("Category updated successfully");
-                    response.setStatus(HttpStatus.OK);
+                    response.setStatusCode(HttpStatus.OK.value());
                     return response;
                 })
                 .doOnSuccess(success -> loggingService.info("Category updated successfully"))
@@ -104,15 +109,13 @@ public class CategoryService {
     public Mono<CustomResponse> deleteCategory(String id) throws ServiceException {
         return categoryRepository.findById(id)
                 .switchIfEmpty(
-                        Mono.error(new ServiceException("Category with ID " + id + " not found", HttpStatus.NOT_FOUND)))
-                .flatMap(category -> {
-                    return categoryRepository.delete(category).then(Mono.just(category));
-                })
+                        Mono.error(new ServiceException(String.format(CATEGORY_NOT_FOUND, id), HttpStatus.NOT_FOUND)))
+                .flatMap(category -> categoryRepository.delete(category).then(Mono.just(category)))
                 .map(deletedCategory -> {
                     CustomResponse response = new CustomResponse();
                     response.addData("category", deletedCategory);
                     response.setMessage("Category deleted successfully");
-                    response.setStatus(HttpStatus.OK);
+                    response.setStatusCode(HttpStatus.OK.value());
                     return response;
                 })
                 .doOnSuccess(success -> loggingService.info("Category deleted successfully"))

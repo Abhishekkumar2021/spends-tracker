@@ -1,8 +1,6 @@
 package com.tracker.backend.services;
 
 import java.util.List;
-
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.ReactiveUserDetailsService;
 import org.springframework.security.core.userdetails.User;
@@ -11,13 +9,13 @@ import org.springframework.stereotype.Service;
 
 import com.tracker.backend.repositories.UserRepository;
 
+import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
 
 @Service
+@RequiredArgsConstructor
 public class CustomUserDetailsService implements ReactiveUserDetailsService {
-
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
     @Override
     public Mono<UserDetails> findByUsername(String username) {

@@ -9,7 +9,7 @@ import lombok.Setter;
 @Setter
 public class ServiceException extends RuntimeException {
     private static final long serialVersionUID = 1L;
-    private HttpStatus status;
+    private final HttpStatus status;
 
     public ServiceException(String message) {
         super(message);

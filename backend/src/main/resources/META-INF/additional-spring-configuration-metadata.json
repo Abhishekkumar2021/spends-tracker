@@ -1,13 +1,37 @@
-{
-    "properties": [
-        {
-            "name": "jwt.secret",
-            "type": "java.lang.String",
-            "description": "The secret key used to sign the JWT"
-        }, {
-            "name": "jwt.expiration",
-            "type": "java.lang.Integer",
-            "description": "The expiration time of the JWT in milliseconds"
-        }
-    ]
-}
+{"properties": [
+  {
+    "name": "jwt.expiration.refresh",
+    "type": "java.lang.String",
+    "description": "A description for 'jwt.expiration.refresh'"
+  },
+  {
+    "name": "jwt.secret.refresh",
+    "type": "java.lang.String",
+    "description": "A description for 'jwt.secret.refresh'"
+  },
+  {
+    "name": "jwt.expiration.access",
+    "type": "java.lang.String",
+    "description": "A description for 'jwt.expiration.access'"
+  },
+  {
+    "name": "jwt.secret.access",
+    "type": "java.lang.String",
+    "description": "A description for 'jwt.secret.access'"
+  },
+  {
+    "name": "otp.expiration",
+    "type": "java.lang.String",
+    "description": "A description for 'otp.expiration'"
+  },
+  {
+    "name": "jwt.expiration.otp",
+    "type": "java.lang.String",
+    "description": "A description for 'jwt.expiration.otp'"
+  },
+  {
+    "name": "jwt.secret.otp",
+    "type": "java.lang.String",
+    "description": "A description for 'jwt.secret.otp'"
+  }
+]}

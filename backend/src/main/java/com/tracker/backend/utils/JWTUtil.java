@@ -23,52 +23,100 @@ import lombok.Setter;
 @Component
 public class JWTUtil {
     private final UserRepository userRepository;
-    @Value("${jwt.secret}")
-    private String secret;
+    @Value("${jwt.secret.access}")
+    private String accessTokenSecret;
 
-    @Value("${jwt.expiration}")
-    private long expiration;
+    @Value("${jwt.secret.refresh}")
+    private String refreshTokenSecret;
+
+    @Value("${jwt.secret.otp}")
+    private String otpSecret;
+
+    @Value("${jwt.expiration.secret}")
+    private long accessTokenExpiration;
+
+    @Value("${jwt.expiration.refresh}")
+    private long refreshTokenExpiration;
+
+    @Value("${jwt.expiration.otp}")
+    private long otpExpiration;
     
     // Methods
-    public String generateToken(String username, Role role) {
+    public String generateAccessToken(String username, Role role) {
         return Jwts
                 .builder()
                 .setSubject(username)
                 .claim("role", role)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + expiration))
-                .signWith(getSignInKey(), SignatureAlgorithm.HS256)
+                .setExpiration(new Date(System.currentTimeMillis() + accessTokenExpiration))
+                .signWith(getSignInKey(accessTokenSecret), SignatureAlgorithm.HS256)
                 .compact();
     }
 
-    public Boolean validateToken(String token, String username) {
-        String usernameFromToken = extractUsername(token);
-        boolean isTokenExpired = isTokenExpired(token);
+    public String generateRefreshToken(String username) {
+        return Jwts
+                .builder()
+                .setSubject(username)
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + refreshTokenExpiration))
+                .signWith(getSignInKey(refreshTokenSecret), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    public String generateOTPToken(String email) {
+        return Jwts
+                .builder()
+                .setSubject(email)
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + otpExpiration))
+                .signWith(getSignInKey(otpSecret), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    public Boolean validateAccessToken(String token, String username) {
+        String usernameFromToken = extractUsernameFromAccessToken(token);
+        boolean isTokenExpired = isTokenExpired(token, accessTokenSecret);
         return usernameFromToken.equals(username) && !isTokenExpired;
     }
 
-    public String extractUsername(String token) {
-        return (String) getClaims(token).getSubject();
+    public Boolean validateRefreshToken(String token) {
+        return !isTokenExpired(token, refreshTokenSecret);
     }
 
-    public Role extractRole(String token) {
-        return (Role) getClaims(token).get("role");
+    public Boolean validateOTPToken(String token) {
+        return !isTokenExpired(token, otpSecret);
     }
 
-    private Boolean isTokenExpired(String token) {
-        Date expirationDate = getClaims(token).getExpiration();
+    public String extractUsernameFromAccessToken(String token) {
+        return getClaims(token, accessTokenSecret).getSubject();
+    }
+
+    public String extractUsernameFromRefreshToken(String token) {
+        return getClaims(token, refreshTokenSecret).getSubject();
+    }
+
+    public String extractEmailFromOTPToken(String token) {
+        return getClaims(token, otpSecret).getSubject();
+    }
+
+    public Role extractRoleFromAccessToken(String token) {
+        return (Role) getClaims(token, accessTokenSecret).get("role");
+    }
+
+    private Boolean isTokenExpired(String token, String secret) {
+        Date expirationDate = getClaims(token, secret).getExpiration();
         return expirationDate.before(new Date());
     }
 
-    private Key getSignInKey() {
+    private Key getSignInKey(String secret) {
         byte[] keyBytes = secret.getBytes();
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    private Claims getClaims(String token) {
+    private Claims getClaims(String token, String secret) {
         return Jwts
                 .parserBuilder()
-                .setSigningKey(getSignInKey())
+                .setSigningKey(getSignInKey(secret))
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
